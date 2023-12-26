@@ -4,7 +4,7 @@ Copy content from one environment to another in Contentful
 This script allow you to copy a list of entries between environnements
 Natively, Contentful doesn't provides an userfriendly interface to do that. The Contentful CLI is not super easy for business people
 
-<img width="576" alt="image" src="https://github.com/antonincoste/contentful_copy_content/assets/154880000/aea5b1f9-3854-42e8-99f0-d7f4a2447e05">
+<img width="450" alt="image" src="https://github.com/antonincoste/contentful_copy_content/assets/154880000/b156f115-6ff7-4b3a-9100-cf2dc9701897">
 
 
 # Project setup
