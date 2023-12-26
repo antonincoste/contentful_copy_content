@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contentful Entry Copier</title>
+    <style>
+        .form-group select,
+        .form-group textarea,
+        .form-group input[type="text"] {
+            width: 100%; /* Assure que la largeur est la même pour tous les éléments */
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            box-sizing: border-box; /* Inclut la bordure et le padding dans la largeur totale */
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: steelblue;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            color: #333;
+        }
+
+        .row {
+            display: flex;
+            align-items: center; /* Centre verticalement les éléments */
+            justify-content: space-between; /* Ajoute de l'espace entre les éléments */
+            margin-bottom: 10px;
+        }
+        
+        .form-group.half {
+            flex: 1; /* Permet aux enfants de remplir l'espace équitablement */
+            margin-right: 5px; /* Ajoute un peu d'espace entre les éléments */
+        }
+        
+        .form-group.half:last-child {
+            margin-right: 0; /* Supprime la marge pour le dernier élément */
+        }
+        
+        .arrow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 20px; /* Ajoute de l'espace autour de la flèche */
+            font-size: 24px; /* Augmente la taille de la flèche */
+        }
+        
+        .checkbox-group {
+            display: flex;
+        }
+        
+        .checkbox-group .form-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-group .form-group label {
+            margin-left: 8px;
+        }
+
+        .message-success {
+            color: darkgreen;
+            border-radius: 4px;
+            background-color: #CCFFCD;
+            padding: 2px 0px 2px 5px;
+        }
+    
+        .message-error {
+            color: darkred;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: #FFCCCB;
+            padding: 2px 0px 2px 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Copy Contentful Entry Between Environments</h2>
+        <form id="copyForm">
+            <div class="row">
+                <div class="form-group half">
+                    <label for="sourceEnv">Source Environment:</label>
+                    <select id="sourceEnv">
+                        <option value="dev">Dev</option>
+                        <option value="qa">QA</option>
+                        <option value="stg">Staging</option>
+                        <option value="content">Content</option>
+                    </select>
+                </div>
+                
+                <div class="arrow">→</div>
+            
+                <div class="form-group half">
+                    <label for="targetEnv">Target Environment:</label>
+                    <select id="targetEnv">
+                        <option value="dev">Dev</option>
+                        <option value="qa">QA</option>
+                        <option value="stg">Staging</option>
+                        <option value="content">Content</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="entryId">Entry IDs (one per line):</label>
+                <textarea id="entryId" required rows="5"></textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <div class="form-group">
+                    <input type="checkbox" id="copyContent" name="copyContent" checked>
+                    <label for="copyContent">Copy content</label>
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="publishContent" name="publishContent" checked>
+                    <label for="publishContent">Publish content</label>
+                </div>
+            </div>
+
+            <button type="submit">EXECUTE</button>
+
+            </form>
+            <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('copyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sourceEnv = document.getElementById('sourceEnv').value;
+            const targetEnv = document.getElementById('targetEnv').value;
+            const entryIds = document.getElementById('entryId').value.split('\n').filter(Boolean); // Split by new lines and filter out empty lines
+            const copyChecked = document.getElementById('copyContent').checked;
+            const publishChecked = document.getElementById('publishContent').checked;
+    
+            const messageContainer = document.getElementById('result');
+            messageContainer.innerHTML = ''; // Clear previous messages
+    
+            fetch('/copy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourceEnv, targetEnv, entryIds, copyChecked, publishChecked })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Réponse reçue : ", data); // Log pour débogage
+        
+                data.message.split('\n').forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = msg;
+                    messageDiv.classList.add(msg.includes('successfully') || msg.includes('copied') ? 'message-success' : 'message-error');
+                    messageContainer.appendChild(messageDiv);
+                });
+            })
+            .catch(error => {
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = `Erreur: ${error}`;
+                errorDiv.classList.add('message-error');
+                messageContainer.appendChild(errorDiv);
+            });
+        });
+    </script>
+           
+</body>
+</html>
